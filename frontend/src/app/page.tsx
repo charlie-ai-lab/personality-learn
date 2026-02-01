@@ -18,7 +18,7 @@ export default function Home() {
     }
 
     try {
-      const response = await fetch('http://localhost:3001/api/intentions', {
+      const response = await fetch('/api/intentions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -34,18 +34,19 @@ export default function Home() {
       
       if (data.success && data.data?.id) {
         // 生成学习计划
-        await fetch(`http://localhost:3001/api/plans/generate`, {
+        await fetch('/api/plans/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ intention_id: data.data.id })
         });
 
         alert('学习计划已生成！');
-        router.push(`/plan/${data.data.id}`);
+        router.push(`/learning-plan?id=${data.data.id}`);
       } else {
         alert('创建学习意图失败，请重试');
       }
     } catch (error) {
+      console.error('API错误:', error);
       alert('服务错误，请检查后端是否运行');
     }
   };

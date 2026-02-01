@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 interface Chapter {
   id: string;
@@ -22,8 +22,8 @@ interface LearningProgress {
 
 export default function LearningPlan() {
   const router = useRouter();
-  const params = useParams();
-  const planId = params.id as string;
+  const searchParams = useSearchParams();
+  const planId = searchParams.get('id') as string;
 
   const [plan, setPlan] = useState<any>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -42,12 +42,12 @@ export default function LearningPlan() {
       setIsLoading(true);
       
       // 加载计划信息
-      const planRes = await fetch(`http://localhost:3001/api/plans/${planId}`);
+      const planRes = await fetch(`/api/plans/${planId}`);
       const planData = await planRes.json();
       setPlan(planData.data);
 
       // 加载章节
-      const chaptersRes = await fetch(`http://localhost:3001/api/progress/plan/${planId}`);
+      const chaptersRes = await fetch(`/api/progress/plan/${planId}`);
       const chaptersData = await chaptersRes.json();
       setProgressList(chaptersData.data);
       setChapters(planData.data.chapters);
@@ -62,7 +62,7 @@ export default function LearningPlan() {
 
   const startLearning = async (chapterId: string) => {
     try {
-      await fetch(`http://localhost:3001/api/progress/start/${chapterId}`, {
+      await fetch(`/api/progress/start/${chapterId}`, {
         method: 'POST'
       });
       
@@ -77,7 +77,7 @@ export default function LearningPlan() {
 
   const completeChapter = async (chapterId: string) => {
     try {
-      await fetch(`http://localhost:3001/api/progress/complete/${chapterId}`, {
+      await fetch(`/api/progress/complete/${chapterId}`, {
         method: 'POST'
       });
       
@@ -95,7 +95,7 @@ export default function LearningPlan() {
       setIsLoading(true);
       setSelectedChapter(chapterId);
 
-      const res = await fetch(`http://localhost:3001/api/chapters/${chapterId}/content`);
+      const res = await fetch(`/api/chapters/${chapterId}/content`);
       const data = await res.json();
       setChapterContent(data.data.content);
       setIsLoading(false);

@@ -10,7 +10,7 @@ const router = Router();
 // 创建学习意图
 router.post('/intentions', (req: Request, res: Response) => {
   try {
-    const { topic, goal, currentLevel, learningPreference, lessonDuration } = req.body;
+    const { topic, goal, current_level, learning_preference, lesson_duration } = req.body;
     
     const id = uuidv4();
     const stmt = db.prepare(`
@@ -18,11 +18,11 @@ router.post('/intentions', (req: Request, res: Response) => {
       VALUES (?, ?, ?, ?, ?, ?)
     `);
     
-    stmt.run(id, topic, goal, currentLevel, learningPreference, lessonDuration);
+    stmt.run(id, topic, goal, current_level, learning_preference, lesson_duration);
     
     res.json({
       success: true,
-      data: { id, topic, goal, currentLevel, learningPreference, lessonDuration }
+      data: { id, topic, goal, current_level, learning_preference, lesson_duration }
     });
   } catch (error) {
     res.status(500).json({ success: false, error: String(error) });
@@ -61,12 +61,16 @@ router.get('/intentions/:id', (req: Request, res: Response) => {
 // 创建学习计划（AI生成）
 router.post('/plans/generate', async (req: Request, res: Response) => {
   try {
-    const { intentionId } = req.body;
+    const { intention_id } = req.body;
+    console.log('[plans/generate] 收到请求, intention_id:', intention_id);
+    console.log('[plans/generate] 请求体:', req.body);
     
     // 获取学习意图
-    const intention = db.prepare('SELECT * FROM learning_intentions WHERE id = ?').get(intentionId) as LearningIntention | undefined;
+    const intention = db.prepare('SELECT * FROM learning_intentions WHERE id = ?').get(intention_id) as LearningIntention | undefined;
+    console.log('[plans/generate] 查询结果:', intention);
     
     if (!intention) {
+      console.log('[plans/generate] 未找到意图，返回404');
       return res.status(404).json({ success: false, error: '未找到该学习意图' });
     }
     
@@ -106,7 +110,7 @@ router.post('/plans/generate', async (req: Request, res: Response) => {
       INSERT INTO learning_plans (id, intention_id, course_title)
       VALUES (?, ?, ?)
     `);
-    insertPlan.run(planId, intentionId, planData.course_title);
+    insertPlan.run(planId, intention_id, planData.course_title);
     
     // 保存章节
     const insertChapter = db.prepare(`
