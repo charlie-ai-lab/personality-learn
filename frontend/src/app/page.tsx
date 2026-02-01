@@ -38,7 +38,6 @@ export default function Home() {
 
     setLoading(true);
     try {
-      // Step 1: 创建学习意图
       const response = await fetch('/api/intentions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -48,7 +47,6 @@ export default function Home() {
       const data = await response.json();
       if (data.success) {
         setIntentionId(data.data.id);
-        // Step 2: 获取澄清问题
         const questionsResponse = await fetch(`/api/intentions/${data.data.id}/questions`);
         const questionsData = await questionsResponse.json();
         
@@ -56,7 +54,6 @@ export default function Home() {
           setQuestions(questionsData.data.questions);
           setStep(2);
         } else {
-          // 没有问题，直接生成计划
           await generatePlan(data.data.id);
         }
       } else {
@@ -90,10 +87,8 @@ export default function Home() {
         setAnswers({ ...answers, [questions[currentQuestionIndex].id]: answer });
         
         if (data.data.is_complete) {
-          // 所有问题回答完毕，生成计划
           await generatePlan(intentionId);
         } else {
-          // 下一题
           setCurrentQuestionIndex(currentQuestionIndex + 1);
         }
       }
@@ -134,27 +129,42 @@ export default function Home() {
   const progress = questions.length > 0 ? ((currentQuestionIndex + 1) / questions.length) * 100 : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-100 via-purple-50 to-indigo-100 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
+    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
       {/* 背景装饰 */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300/30 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-300/30 rounded-full blur-3xl"></div>
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-violet-400/20 to-purple-400/20 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-br from-indigo-400/20 to-blue-400/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-purple-300/10 to-indigo-300/10 rounded-full blur-3xl"></div>
       </div>
 
       <div className="relative container mx-auto px-4 py-8 max-w-2xl">
         {/* 进度指示器 */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              {step === 1 && '第 1 步：基础信息'}
-              {step === 2 && `第 2 步：澄清问题 (${currentQuestionIndex + 1}/${questions.length})`}
-              {step === 3 && '第 3 步：计划生成'}
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">
+              {step === 1 && (
+                <>
+                  <span className="text-purple-600">第 1 步</span> / 3 - 基础信息
+                </>
+              )}
+              {step === 2 && (
+                <>
+                  <span className="text-purple-600">第 2 步</span> / 3 - 回答问题 ({currentQuestionIndex + 1}/{questions.length})
+                </>
+              )}
+              {step === 3 && (
+                <>
+                  <span className="text-green-600">第 3 步</span> / 3 - 完成
+                </>
+              )}
             </span>
-            <span className="text-sm font-medium text-purple-600">{Math.round(step === 2 ? progress : (step - 1) / 2 * 100)}%</span>
+            <span className="text-sm font-bold text-purple-600">
+              {step === 2 ? Math.round(progress) : Math.round((step - 1) / 2 * 100)}%
+            </span>
           </div>
-          <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div className="h-2 bg-gray-200/50 dark:bg-gray-700/50 rounded-full overflow-hidden backdrop-blur-sm">
             <div 
-              className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 transition-all duration-500"
+              className="h-full bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500 transition-all duration-500 ease-out"
               style={{ width: `${step === 2 ? progress : (step - 1) / 2 * 100}%` }}
             ></div>
           </div>
@@ -162,23 +172,24 @@ export default function Home() {
 
         {/* Step 1: 基础信息输入 */}
         {step === 1 && (
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/50">
+          <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/50 dark:border-gray-700/50">
             <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-2xl mb-4 shadow-lg">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl mb-4 shadow-xl shadow-purple-500/20">
                 <span className="text-3xl">🎯</span>
               </div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2">
-                开始你的学习之旅
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">
+                个性化学习助手
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
+                AI驱动，为你量身定制学习计划
               </p>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-5">
               {/* 学习主题 */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center">
-                  <span className="w-6 h-6 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full flex items-center justify-center text-xs mr-2">1</span>
+                  <span className="w-7 h-7 bg-gradient-to-br from-violet-500 to-purple-500 text-white rounded-lg flex items-center justify-center text-xs mr-2 shadow-lg">1</span>
                   你想学习什么？
                 </label>
                 <input
@@ -186,14 +197,14 @@ export default function Home() {
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
                   placeholder="例如：Python编程、数据分析、机器学习、英语口语"
-                  className="w-full px-5 py-4 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-lg"
+                  className="w-full px-5 py-4 bg-white dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-800 dark:text-gray-200 placeholder-gray-400"
                 />
               </div>
 
               {/* 学习目标 */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center">
-                  <span className="w-6 h-6 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center text-xs mr-2">2</span>
+                  <span className="w-7 h-7 bg-gradient-to-br from-indigo-500 to-blue-500 text-white rounded-lg flex items-center justify-center text-xs mr-2 shadow-lg">2</span>
                   你的学习目标是？
                 </label>
                 <input
@@ -201,20 +212,20 @@ export default function Home() {
                   value={goal}
                   onChange={(e) => setGoal(e.target.value)}
                   placeholder="例如：掌握Python基础语法、能够独立开发项目、通过考试"
-                  className="w-full px-5 py-4 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-lg"
+                  className="w-full px-5 py-4 bg-white dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-gray-800 dark:text-gray-200 placeholder-gray-400"
                 />
               </div>
 
               {/* 当前水平 */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center">
-                  <span className="w-6 h-6 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center text-xs mr-2">3</span>
+                  <span className="w-7 h-7 bg-gradient-to-br from-blue-500 to-cyan-500 text-white rounded-lg flex items-center justify-center text-xs mr-2 shadow-lg">3</span>
                   你的当前水平是？
                 </label>
                 <select
                   value={level}
                   onChange={(e) => setLevel(e.target.value)}
-                  className="w-full px-5 py-4 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-lg"
+                  className="w-full px-5 py-4 bg-white dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-800 dark:text-gray-200"
                 >
                   <option value="初学者">🌱 初学者 - 完全零基础</option>
                   <option value="入门">🌿 入门 - 了解一些基本概念</option>
@@ -231,7 +242,7 @@ export default function Home() {
                 className={`w-full py-4 px-6 rounded-xl font-bold text-lg shadow-lg transition-all ${
                   loading || !topic.trim()
                     ? 'bg-gray-300 dark:bg-gray-600 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white hover:shadow-xl transform hover:-translate-y-0.5'
+                    : 'bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500 hover:from-violet-600 hover:via-purple-600 hover:to-indigo-600 text-white hover:shadow-xl transform hover:-translate-y-0.5'
                 }`}
               >
                 {loading ? (
@@ -243,7 +254,10 @@ export default function Home() {
                     生成个性化问题...
                   </span>
                 ) : (
-                  '✨ 继续，回答几个问题'
+                  <>
+                    <span className="mr-2">✨</span>
+                    继续，回答几个问题
+                  </>
                 )}
               </button>
             </div>
@@ -252,35 +266,35 @@ export default function Home() {
 
         {/* Step 2: 澄清问题 */}
         {step === 2 && currentQuestion && (
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/50">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl mb-4 shadow-lg">
+          <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/50 dark:border-gray-700/50">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl mb-4 shadow-xl shadow-amber-500/20">
                 <span className="text-2xl">💬</span>
               </div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                 了解你更多
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
-                回答以下问题，帮助AI生成更适合你的学习计划
+                AI根据你的回答生成更精准的学习计划
               </p>
             </div>
 
-            {/* 问题进度 */}
+            {/* 问题进度指示器 */}
             <div className="flex justify-center gap-2 mb-8">
               {questions.map((_, index) => (
                 <div
                   key={index}
-                  className={`w-3 h-3 rounded-full transition-all ${
-                    index < currentQuestionIndex ? 'bg-green-500' :
-                    index === currentQuestionIndex ? 'bg-amber-500 scale-125' : 'bg-gray-300 dark:bg-gray-600'
+                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                    index < currentQuestionIndex ? 'bg-green-500 scale-110' :
+                    index === currentQuestionIndex ? 'bg-amber-500 scale-125 shadow-lg shadow-amber-500/50' : 'bg-gray-300 dark:bg-gray-600'
                   }`}
                 ></div>
               ))}
             </div>
 
             {/* 问题卡片 */}
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-2xl p-6 mb-6">
-              <p className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-2xl p-6 mb-6 border border-amber-100 dark:border-amber-800/30">
+              <p className="text-xl font-semibold text-gray-800 dark:text-gray-200 leading-relaxed">
                 {currentQuestion.question}
               </p>
             </div>
@@ -293,13 +307,15 @@ export default function Home() {
                     key={index}
                     onClick={() => handleAnswerQuestion(option)}
                     disabled={loading}
-                    className="w-full p-4 text-left bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all group"
+                    className="w-full p-4 text-left bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all group"
                   >
                     <span className="flex items-center">
-                      <span className="w-8 h-8 bg-gray-100 dark:bg-gray-600 rounded-lg flex items-center justify-center mr-3 text-sm font-medium group-hover:bg-purple-500 group-hover:text-white transition-colors">
+                      <span className="w-8 h-8 bg-gray-100 dark:bg-gray-600 rounded-lg flex items-center justify-center mr-3 text-sm font-semibold group-hover:bg-purple-500 group-hover:text-white transition-colors text-gray-600 dark:text-gray-300 group-hover:text-white">
                         {String.fromCharCode(65 + index)}
                       </span>
-                      {option}
+                      <span className="text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">
+                        {option}
+                      </span>
                     </span>
                   </button>
                 ))
@@ -309,7 +325,7 @@ export default function Home() {
                     placeholder="在这里输入你的回答..."
                     rows={3}
                     id="text-answer"
-                    className="w-full p-4 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all resize-none"
+                    className="w-full p-4 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all resize-none text-gray-800 dark:text-gray-200 placeholder-gray-400"
                   />
                   <button
                     onClick={() => {
@@ -317,7 +333,7 @@ export default function Home() {
                       if (answer?.trim()) handleAnswerQuestion(answer);
                     }}
                     disabled={loading}
-                    className="mt-3 w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold rounded-xl transition-all"
+                    className="mt-3 w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold rounded-xl transition-all hover:shadow-lg"
                   >
                     确认回答 →
                   </button>
@@ -328,7 +344,8 @@ export default function Home() {
             {/* 跳过按钮 */}
             <button
               onClick={() => handleAnswerQuestion('跳过')}
-              className="mt-4 w-full py-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors text-sm"
+              disabled={loading}
+              className="mt-4 w-full py-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors text-sm hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg"
             >
               这个问题不太相关，跳过 →
             </button>
@@ -337,8 +354,8 @@ export default function Home() {
 
         {/* Step 3: 生成完成 */}
         {step === 3 && (
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/50 text-center">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full mb-6 shadow-lg animate-bounce">
+          <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/50 dark:border-gray-700/50 text-center">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full mb-6 shadow-2xl shadow-green-500/30 animate-bounce">
               <span className="text-4xl">🎉</span>
             </div>
             
@@ -347,12 +364,12 @@ export default function Home() {
             </h2>
             
             <p className="text-gray-600 dark:text-gray-400 mb-8">
-              AI已经根据你的回答，生成了个性化的学习计划。让我们开始学习吧！
+              AI已经根据你的回答，生成了个性化学习计划
             </p>
 
             <button
               onClick={() => planId && router.push(`/learning-plan?id=${planId}`)}
-              className="w-full py-4 px-6 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5"
+              className="w-full py-4 px-6 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold text-lg rounded-xl shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1"
             >
               🚀 开始学习
             </button>

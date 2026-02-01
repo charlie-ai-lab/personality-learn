@@ -21,44 +21,59 @@ interface LearningProgress {
 export default function LearningPlan() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const planId = searchParams.get('id');
-
+  // 使用useEffect来安全获取参数
+  const [planId, setPlanId] = useState<string | null>(null);
   const [plan, setPlan] = useState<any>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
-  const [progressList, setProgressList] = useState<LearningProgress[]>([]);
   const [selectedChapter, setSelectedChapter] = useState<string | null>(null);
   const [chapterContent, setChapterContent] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  // 初始化获取planId
   useEffect(() => {
-    if (planId) {
-      loadPlan();
+    const id = searchParams.get('id');
+    if (id) {
+      setPlanId(id);
     }
-  }, [planId]);
+  }, [searchParams]);
 
-  const loadPlan = async () => {
+  // 加载学习计划
+  useEffect(() => {
     if (!planId) return;
     
-    try {
-      setIsLoading(true);
-      const planRes = await fetch(`/api/plans/${planId}`);
-      const planData = await planRes.json();
-      
-      if (planData.success) {
-        setPlan(planData.data);
-        setChapters(planData.data.chapters || []);
+    const loadPlan = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const planRes = await fetch(`/api/plans/${planId}`);
+        const planData = await planRes.json();
+        
+        if (planData.success) {
+          setPlan(planData.data);
+          setChapters(planData.data.chapters || []);
+        } else {
+          setError('未找到学习计划');
+        }
+      } catch (err) {
+        console.error('加载学习计划失败:', err);
+        setError('加载失败，请检查网络连接');
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error('加载学习计划失败:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
+
+    loadPlan();
+  }, [planId]);
 
   const startLearning = async (chapterId: string) => {
     try {
       await fetch(`/api/progress/start/${chapterId}`, { method: 'POST' });
-      loadPlan();
+      // 更新本地状态
+      setChapters(prev => prev.map(ch => 
+        ch.id === chapterId ? { ...ch, status: 'in_progress' as const } : ch
+      ));
     } catch (error) {
       console.error('开始学习失败:', error);
     }
@@ -71,7 +86,10 @@ export default function LearningPlan() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ selfAssessment: '已掌握' })
       });
-      loadPlan();
+      // 更新本地状态
+      setChapters(prev => prev.map(ch => 
+        ch.id === chapterId ? { ...ch, status: 'completed' as const } : ch
+      ));
     } catch (error) {
       console.error('完成章节失败:', error);
     }
@@ -86,24 +104,22 @@ export default function LearningPlan() {
       setChapterContent(data.data.content);
     } catch (error) {
       console.error('加载章节内容失败:', error);
+      setError('加载章节内容失败');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const getProgress = (chapterId: string) => {
-    return progressList.find(p => p.chapter_id === chapterId);
-  };
-
   const calculateProgress = () => {
     if (chapters.length === 0) return 0;
-    const completed = chapters.filter(c => getProgress(c.id)?.status === 'completed').length;
+    const completed = chapters.filter(c => c.status === 'completed').length;
     return Math.round((completed / chapters.length) * 100);
   };
 
+  // 加载状态
   if (isLoading && !plan) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-violet-100 via-purple-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-violet-100 via-purple-50 to-indigo-100 dark:from-gray-900 dark:via-purple-900/10 dark:to-indigo-900/10 flex items-center justify-center">
         <div className="text-center">
           <div className="relative">
             <div className="w-20 h-20 border-4 border-purple-200 rounded-full animate-spin border-t-purple-500 mx-auto mb-4"></div>
@@ -117,16 +133,50 @@ export default function LearningPlan() {
     );
   }
 
+  // 错误状态
+  if (error && !plan) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-violet-100 via-purple-50 to-indigo-100 dark:from-gray-900 dark:via-purple-900/10 dark:to-indigo-900/10 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="text-6xl mb-4">😕</div>
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+            {error}
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            {!planId ? '缺少学习计划ID，请从首页重新创建' : '无法加载学习计划，请检查网络连接或返回首页重新创建'}
+          </p>
+          <div className="flex gap-4 justify-center">
+            <button
+              onClick={() => router.push('/')}
+              className="px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all"
+            >
+              返回首页
+            </button>
+            {planId && (
+              <button
+                onClick={() => window.location.reload()}
+                className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-xl hover:bg-gray-300 dark:hover:bg-gray-600 transition-all"
+              >
+                重新加载
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 没有计划
   if (!plan) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-violet-100 via-purple-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-violet-100 via-purple-50 to-indigo-100 dark:from-gray-900 dark:via-purple-900/10 dark:to-indigo-900/10 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4">😕</div>
+          <div className="text-6xl mb-4">📚</div>
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">未找到学习计划</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">请先创建一个学习计划</p>
           <button
             onClick={() => router.push('/')}
-            className="px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-xl"
+            className="px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all"
           >
             创建学习计划
           </button>
@@ -143,7 +193,7 @@ export default function LearningPlan() {
           <div className="flex items-center justify-between">
             <button
               onClick={() => router.push('/')}
-              className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+              className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors font-medium"
             >
               <span className="text-xl">←</span>
               <span>返回</span>
@@ -163,7 +213,7 @@ export default function LearningPlan() {
             <div>
               <h2 className="text-lg font-semibold text-gray-800 dark:text-white">学习进度</h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                {chapters.filter(c => getProgress(c.id)?.status === 'completed').length} / {chapters.length} 章节已完成
+                {chapters.filter(c => c.status === 'completed').length} / {chapters.length} 章节已完成
               </p>
             </div>
             <div className="text-right">
@@ -188,8 +238,7 @@ export default function LearningPlan() {
           </h2>
           
           {chapters.map((chapter, index) => {
-            const progress = getProgress(chapter.id);
-            const status = progress?.status || 'not_started';
+            const status = chapter.status || 'not_started';
             
             return (
               <div
@@ -204,9 +253,9 @@ export default function LearningPlan() {
                     {/* 章节序号 */}
                     <div className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold ${
                       status === 'completed' 
-                        ? 'bg-green-500 text-white' 
+                        ? 'bg-gradient-to-br from-green-400 to-emerald-500 text-white' 
                         : status === 'in_progress'
-                        ? 'bg-purple-500 text-white'
+                        ? 'bg-gradient-to-br from-purple-500 to-indigo-500 text-white'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                     }`}>
                       {status === 'completed' ? '✓' : index + 1}
@@ -223,13 +272,13 @@ export default function LearningPlan() {
                       </p>
                       
                       <div className="flex flex-wrap gap-3 text-sm">
-                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-full">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
                           🎯 {chapter.learning_goal}
                         </span>
-                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-full">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full">
                           ⏱️ {chapter.estimated_duration}分钟
                         </span>
-                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-full">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full">
                           📖 {chapter.learning_method}
                         </span>
                       </div>
