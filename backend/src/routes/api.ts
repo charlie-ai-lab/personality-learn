@@ -144,7 +144,7 @@ router.post('/plans/generate', async (req: Request, res: Response) => {
 // 获取学习计划
 router.get('/plans/:id', (req: Request, res: Response) => {
   try {
-    const plan = db.prepare('SELECT * FROM learning_plans WHERE id = ?').get(req.params.id);
+    const plan: any = db.prepare('SELECT * FROM learning_plans WHERE id = ?').get(req.params.id);
     
     if (!plan) {
       return res.status(404).json({ success: false, error: '未找到该学习计划' });
@@ -176,7 +176,7 @@ router.get('/chapters/:id/content', async (req: Request, res: Response) => {
     }
     
     // 获取计划信息
-    const plan = db.prepare('SELECT * FROM learning_plans WHERE id = ?').get(chapter.plan_id);
+    const plan: any = db.prepare('SELECT * FROM learning_plans WHERE id = ?').get(chapter.plan_id);
     const intention = db.prepare(`
       SELECT li.* FROM learning_intentions li
       JOIN learning_plans lp ON lp.intention_id = li.id
@@ -306,7 +306,7 @@ router.get('/assessment/:chapterId', async (req: Request, res: Response) => {
     }
     
     // 获取意图信息
-    const plan = db.prepare('SELECT * FROM learning_plans WHERE id = ?').get(chapter.plan_id);
+    const plan: any = db.prepare('SELECT * FROM learning_plans WHERE id = ?').get(chapter.plan_id);
     const intention = db.prepare(`
       SELECT li.* FROM learning_intentions li
       JOIN learning_plans lp ON lp.intention_id = li.id
@@ -346,7 +346,7 @@ router.post('/assessment/submit', async (req: Request, res: Response) => {
   try {
     const { questionId, answer } = req.body;
     
-    const question = db.prepare('SELECT * FROM assessment_questions WHERE id = ?').get(questionId);
+    const question: any = db.prepare('SELECT * FROM assessment_questions WHERE id = ?').get(questionId);
     
     if (!question) {
       return res.status(404).json({ success: false, error: '未找到该问题' });

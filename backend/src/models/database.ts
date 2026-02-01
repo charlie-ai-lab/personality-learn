@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 
-const dbPath = path.join(__dirname, '..', 'data', 'personality-learn.db');
+const dbPath = path.resolve(__dirname, '..', '..', 'data', 'personality-learn.db');
 const db = new Database(dbPath);
 
 // 启用外键约束

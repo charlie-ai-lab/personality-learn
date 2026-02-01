@@ -44,7 +44,7 @@ export async function generateWithAI(prompt: string): Promise<AIResponse> {
       })
     });
 
-    const data = await response.json();
+    const data: any = await response.json();
     
     if (data.choices && data.choices[0]) {
       return {
@@ -55,12 +55,14 @@ export async function generateWithAI(prompt: string): Promise<AIResponse> {
 
     return {
       success: false,
-      error: 'AI响应格式错误'
+      error: 'AI响应格式错误',
+      content: ''
     };
   } catch (error) {
     return {
       success: false,
-      error: String(error)
+      error: String(error),
+      content: ''
     };
   }
 }
