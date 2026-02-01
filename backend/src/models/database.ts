@@ -9,7 +9,7 @@ db.pragma('foreign_keys = ON');
 
 // 创建表
 db.exec(`
-  -- 用户学习意图表
+  -- 用户学习意图表（初始信息）
   CREATE TABLE IF NOT EXISTS learning_intentions (
     id TEXT PRIMARY KEY,
     topic TEXT NOT NULL,
@@ -18,6 +18,30 @@ db.exec(`
     learning_preference TEXT,
     lesson_duration INTEGER,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  );
+
+  -- 动态澄清问题表
+  CREATE TABLE IF NOT EXISTS clarification_questions (
+    id TEXT PRIMARY KEY,
+    intention_id TEXT NOT NULL,
+    question TEXT NOT NULL,
+    question_type TEXT,
+    options TEXT,
+    order_index INTEGER NOT NULL,
+    answered INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (intention_id) REFERENCES learning_intentions(id) ON DELETE CASCADE
+  );
+
+  -- 用户回答表
+  CREATE TABLE IF NOT EXISTS user_answers (
+    id TEXT PRIMARY KEY,
+    question_id TEXT NOT NULL,
+    intention_id TEXT NOT NULL,
+    answer TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (question_id) REFERENCES clarification_questions(id) ON DELETE CASCADE,
+    FOREIGN KEY (intention_id) REFERENCES learning_intentions(id) ON DELETE CASCADE
   );
 
   -- 学习计划表
@@ -94,6 +118,23 @@ export interface LearningIntention {
   created_at: string;
 }
 
+export interface ClarificationQuestion {
+  id: string;
+  intention_id: string;
+  question: string;
+  question_type: string;
+  options: string;
+  order_index: number;
+  answered: number;
+}
+
+export interface UserAnswer {
+  id: string;
+  question_id: string;
+  intention_id: string;
+  answer: string;
+}
+
 export interface Chapter {
   id: string;
   plan_id: string;
@@ -109,8 +150,8 @@ export interface LearningProgress {
   id: string;
   chapter_id: string;
   status: string;
-  started_at: string;
-  completed_at: string;
+  started_at: string | null;
+  completed_at: string | null;
   user_self_assessment: string;
   ai_evaluation: string;
   score: number;
